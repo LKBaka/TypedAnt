@@ -1,0 +1,8 @@
+[package]
+name = "repl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lexer = { version = "0.1.0", path = "../lexer" }
+parser = { version = "0.1.0", path = "../parser" }

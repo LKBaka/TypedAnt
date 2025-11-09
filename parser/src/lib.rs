@@ -1,0 +1,268 @@
+mod parse_functions;
+pub mod tests;
+use std::{collections::HashMap, rc::Rc};
+
+use ast::{expr::Expression, node::Node, stmt::Statement};
+use token::{token::Token, token_type::TokenType};
+
+use crate::{
+    error::{ParserError, ParserErrorKind},
+    parse_functions::{
+        parse_i64::parse_i64, parse_ident::parse_ident, parse_infix::parse_infix,
+        parse_let::parse_let,
+    },
+    precedence::{Precedence, get_token_precedence},
+};
+
+pub mod error;
+pub mod precedence;
+
+type ParseResult<T> = Result<T, ParserError>;
+
+type PrefixParseFn = fn(&mut Parser) -> ParseResult<Expression>;
+type InfixParseFn = fn(&mut Parser, Expression) -> ParseResult<Expression>;
+type StmtParseFn = fn(&mut Parser) -> ParseResult<Statement>;
+
+pub struct Parser {
+    tokens: Vec<Token>,
+
+    pos: usize,
+    next_pos: usize,
+
+    pub cur_token: Token,
+    pub peek_token: Token,
+
+    prefix_parse_fn_map: HashMap<TokenType, PrefixParseFn>,
+    infix_parse_fn_map: HashMap<TokenType, InfixParseFn>,
+    statement_parse_fn_map: HashMap<TokenType, StmtParseFn>,
+}
+
+impl Parser {
+    fn init_prefix_parse_fn_map(m: &mut HashMap<TokenType, PrefixParseFn>) {
+        m.insert(TokenType::Integer64, parse_i64);
+        m.insert(TokenType::Ident, parse_ident);
+    }
+
+    fn init_infix_parse_fn_map(m: &mut HashMap<TokenType, InfixParseFn>) {
+        m.insert(TokenType::Plus, parse_infix); // a + b
+        m.insert(TokenType::Asterisk, parse_infix); // a * b
+        m.insert(TokenType::Minus, parse_infix); // a - b
+        m.insert(TokenType::Slash, parse_infix); // a / b
+
+        m.insert(TokenType::Eq, parse_infix); // ==
+        m.insert(TokenType::NotEq, parse_infix); // !=
+
+        m.insert(TokenType::Lt, parse_infix);
+        m.insert(TokenType::Gt, parse_infix);
+    }
+
+    fn init_statement_parse_fn_map(m: &mut HashMap<TokenType, StmtParseFn>) {
+        m.insert(TokenType::Let, parse_let); // let a = 1
+    }
+
+    pub fn new(tokens: Vec<Token>) -> Self {
+        let mut prefix_parse_fn_map = HashMap::new();
+        let mut infix_parse_fn_map = HashMap::new();
+        let mut statement_parse_fn_map = HashMap::new();
+
+        Self::init_prefix_parse_fn_map(&mut prefix_parse_fn_map);
+        Self::init_infix_parse_fn_map(&mut infix_parse_fn_map);
+        Self::init_statement_parse_fn_map(&mut statement_parse_fn_map);
+
+        let mut parser = Self {
+            tokens,
+            pos: 0,
+            next_pos: 0,
+            cur_token: Token::new(
+                "\0".into(),
+                TokenType::Nonsense,
+                "uninit_parser".into(),
+                0,
+                0,
+            ),
+            peek_token: Token::new(
+                "\0".into(),
+                TokenType::Nonsense,
+                "uninit_parser".into(),
+                0,
+                0,
+            ),
+            infix_parse_fn_map,
+            prefix_parse_fn_map,
+            statement_parse_fn_map,
+        };
+
+        parser.next_token();
+
+        parser
+    }
+
+    pub fn next_token(&mut self) {
+        if self.next_pos < self.tokens.len() {
+            self.pos = self.next_pos;
+            self.next_pos += 1;
+
+            self.cur_token = self.tokens[self.pos].clone();
+
+            self.peek_token = if self.next_pos < self.tokens.len() {
+                self.tokens[self.next_pos].clone()
+            } else {
+                Token::eof(
+                    self.cur_token.file.clone(),
+                    self.cur_token.line,
+                    self.cur_token.column,
+                )
+            };
+        } else {
+            self.cur_token = Token::eof(
+                self.cur_token.file.clone(),
+                self.cur_token.line,
+                self.cur_token.column,
+            );
+            self.peek_token = Token::eof(
+                self.peek_token.file.clone(),
+                self.peek_token.line,
+                self.peek_token.column,
+            );
+        }
+    }
+
+    pub fn parse_expression_statement(parser: &mut Self) -> ParseResult<Statement> {
+        let expr = parser.parse_expression(Precedence::Lowest)?;
+
+        if parser.cur_token_is(TokenType::Semicolon) {
+            parser.next_token();
+        }
+
+        Ok(Statement::ExpressionStatement(expr))
+    }
+
+    pub fn parse_statement(&mut self) -> ParseResult<Statement> {
+        let stmt_parse_fn = self
+            .statement_parse_fn_map
+            .get(&self.cur_token.token_type)
+            .map_or(Self::parse_expression_statement as StmtParseFn, |it| *it);
+
+        stmt_parse_fn(self)
+    }
+
+    pub fn parse_program(&mut self) -> ParseResult<Node> {
+        let token = self.cur_token.clone();
+
+        let mut statements = vec![];
+
+        while !self.cur_token_is(TokenType::Eof) {
+            let statement = self.parse_statement()?;
+
+            statements.push(statement);
+
+            self.next_token();
+        }
+
+        Ok(Node::Program { token, statements })
+    }
+
+    // pratt parser 核心函数
+    pub fn parse_expression(&mut self, precedence: Precedence) -> ParseResult<Expression> {
+        let prefix_parse_fn = self
+            .prefix_parse_fn_map
+            .get(&self.cur_token.token_type)
+            .map_or_else(
+                || {
+                    Err(self.make_error(
+                        ParserErrorKind::PrefixParseFnNotFound,
+                        Some(
+                            format!(
+                                "no prefix parse function for {:#?} found",
+                                self.cur_token.token_type
+                            )
+                            .into(),
+                        ),
+                    ))
+                },
+                |it| Ok(it),
+            )?;
+
+        let mut left = prefix_parse_fn(self)?;
+
+        while self.peek_token.token_type != TokenType::Semicolon
+            && precedence < get_token_precedence(self.peek_token.token_type)
+        {
+            let infix_parse_fn = *self
+                .infix_parse_fn_map
+                .get(&self.peek_token.token_type)
+                .map_or_else(
+                    || {
+                        Err(self.make_error(
+                            ParserErrorKind::InfixParseFnNotFound,
+                            Some(
+                                format!(
+                                    "no infix parse function for {:#?} found",
+                                    self.peek_token.token_type
+                                )
+                                .into(),
+                            ),
+                        ))
+                    },
+                    |it| Ok(it),
+                )?;
+
+            self.next_token();
+            left = infix_parse_fn(self, left)?;
+        }
+
+        Ok(left)
+    }
+
+    pub fn make_error(&self, kind: ParserErrorKind, message: Option<Rc<str>>) -> ParserError {
+        ParserError {
+            token: self.cur_token.clone(),
+            kind,
+            message,
+        }
+    }
+
+    #[inline]
+    pub fn cur_token_is(&self, token_ty: TokenType) -> bool {
+        self.cur_token.token_type == token_ty
+    }
+
+    #[inline]
+    pub fn peek_token_is(&self, token_ty: TokenType) -> bool {
+        self.peek_token.token_type == token_ty
+    }
+
+    pub fn expect_cur(&self, expected: TokenType) -> ParseResult<()> {
+        if self.cur_token.token_type == expected {
+            return Ok(());
+        }
+
+        Err(self.make_error(
+            ParserErrorKind::NotExpectedTokenType,
+            Some(
+                format!(
+                    "expected cur token: {:#?}, got: {:#?}",
+                    expected, self.cur_token.token_type
+                )
+                .into(),
+            ),
+        ))
+    }
+
+    pub fn expect_peek(&self, expected: TokenType) -> ParseResult<()> {
+        if self.peek_token.token_type == expected {
+            return Ok(());
+        }
+
+        Err(self.make_error(
+            ParserErrorKind::NotExpectedTokenType,
+            Some(
+                format!(
+                    "expected peek token: {:#?}, got: {:#?}",
+                    expected, self.peek_token.token_type
+                )
+                .into(),
+            ),
+        ))
+    }
+}

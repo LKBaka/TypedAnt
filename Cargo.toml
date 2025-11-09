@@ -1,0 +1,12 @@
+[package]
+name = "TypedAnt"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.51", features = ["derive"] }
+
+repl = { path = "./repl" }
+
+[workspace]
+members = ["ast", "lexer", "repl", "token", "utils", "parser", "type_checker"]
