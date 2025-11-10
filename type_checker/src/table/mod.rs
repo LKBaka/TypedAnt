@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::Type;
+use crate::Ty;
 
 pub enum SymbolScope {
     Global, Local
@@ -8,10 +8,10 @@ pub enum SymbolScope {
 
 #[derive(Debug, Clone)]
 pub enum SymbolType {
-    Variable(Type),
+    Variable(Ty),
     Function {
-        params_type: Vec<Type>,
-        ret_type: Type,
+        params_type: Vec<Ty>,
+        ret_type: Ty,
     },
 }
 
@@ -45,7 +45,7 @@ impl TypeTable {
         self.var_map.insert(symbol.name.clone(), symbol);
     }
 
-    pub fn define_var(&mut self, name: &str, var_ty: Type) -> Symbol {
+    pub fn define_var(&mut self, name: &str, var_ty: Ty) -> Symbol {
         Symbol {
             name: name.into(),
             ty: SymbolType::Variable(var_ty)

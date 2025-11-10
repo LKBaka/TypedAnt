@@ -3,7 +3,10 @@ use std::fmt::Display;
 use bigdecimal::BigDecimal;
 use token::token::Token;
 
-use crate::{expressions::ident::Ident, stmt::Statement};
+use crate::{
+    Ty,
+    typed_ast::{GetType, typed_expressions::ident::Ident, typed_stmt::TypedStatement},
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub enum IntValue {
@@ -37,35 +40,39 @@ impl Display for IntValue {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Expression {
+pub enum TypedExpression {
     BigInt {
         token: Token,
         value: BigDecimal,
+        ty: Ty,
     },
     Int {
         token: Token,
         value: IntValue,
+        ty: Ty,
     },
-    Ident(Ident),
+    Ident(Ident, Ty),
     Infix {
         token: Token,
-        left: Box<Expression>,
-        right: Box<Expression>,
+        left: Box<TypedExpression>,
+        right: Box<TypedExpression>,
+        ty: Ty,
     },
     Function {
         token: Token,
         name: Option<Token>,
-        params: Vec<Box<Expression>>,
-        block: Box<Statement>,
+        params: Vec<Box<TypedExpression>>,
+        block: Box<TypedStatement>,
+        ty: Ty,
     },
 }
 
-impl Display for Expression {
+impl Display for TypedExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BigInt { value, .. } => write!(f, "{}", value),
             Self::Int { value, .. } => write!(f, "{}", value),
-            Self::Ident(ident) => write!(f, "{}", ident),
+            Self::Ident(ident, _) => write!(f, "{}", ident),
             Self::Function {
                 params,
                 name,
@@ -83,7 +90,21 @@ impl Display for Expression {
                     .join(", "),
                 block.to_string()
             ),
-            Self::Infix { token, left, right } => write!(f, "({}{}{})", left, token.value, right),
+            Self::Infix {
+                token, left, right, ..
+            } => write!(f, "({}{}{})", left, token.value, right),
+        }
+    }
+}
+
+impl GetType for TypedExpression {
+    fn get_type(&self) -> &Ty {
+        match self {
+            Self::BigInt { ty, .. } => ty,
+            Self::Int { ty, .. } => ty,
+            Self::Ident(_, ty) => ty,
+            Self::Function { ty, .. } => ty,
+            Self::Infix { ty, .. } => ty,
         }
     }
 }
