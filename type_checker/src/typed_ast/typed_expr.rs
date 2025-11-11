@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use ast::expr::IntValue;
 use bigdecimal::BigDecimal;
 use token::token::Token;
 
@@ -7,37 +8,6 @@ use crate::{
     Ty,
     typed_ast::{GetType, typed_expressions::ident::Ident, typed_stmt::TypedStatement},
 };
-
-#[derive(Clone, Debug, PartialEq, Eq, Copy)]
-pub enum IntValue {
-    I64(i64),
-    I32(i32),
-    I16(i16),
-    I8(i8),
-    ISize(isize),
-    U64(u64),
-    U32(u32),
-    U16(u16),
-    U8(u8),
-    USize(usize),
-}
-
-impl Display for IntValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IntValue::I64(it) => write!(f, "{it}"),
-            IntValue::I32(it) => write!(f, "{it}"),
-            IntValue::I16(it) => write!(f, "{it}"),
-            IntValue::I8(it) => write!(f, "{it}"),
-            IntValue::ISize(it) => write!(f, "{it}"),
-            IntValue::U32(it) => write!(f, "{it}"),
-            IntValue::U64(it) => write!(f, "{it}"),
-            IntValue::U16(it) => write!(f, "{it}"),
-            IntValue::U8(it) => write!(f, "{it}"),
-            IntValue::USize(it) => write!(f, "{it}"),
-        }
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypedExpression {

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::Ty;
+use crate::{Ty, typed_ast::GetType};
 
 pub enum SymbolScope {
     Global, Local
@@ -13,6 +13,15 @@ pub enum SymbolType {
         params_type: Vec<Ty>,
         ret_type: Ty,
     },
+}
+
+impl GetType for SymbolType {
+    fn get_type(&self) -> &Ty {
+        match self {
+            Self::Variable(ty) => ty,
+            Self::Function { .. } => &Ty::Function
+        }
+    }
 }
 
 pub struct Symbol {
