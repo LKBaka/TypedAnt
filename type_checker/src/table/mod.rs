@@ -1,29 +1,30 @@
+pub mod test;
+
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{Ty, typed_ast::GetType};
 
 pub enum SymbolScope {
-    Global, Local
+    Global,
+    Local,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SymbolType {
     Variable(Ty),
-    Function {
-        params_type: Vec<Ty>,
-        ret_type: Ty,
-    },
+    Function { params_type: Vec<Ty>, ret_type: Ty },
 }
 
 impl GetType for SymbolType {
     fn get_type(&self) -> &Ty {
         match self {
             Self::Variable(ty) => ty,
-            Self::Function { .. } => &Ty::Function
+            Self::Function { .. } => &Ty::Function,
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Symbol {
     pub name: Rc<str>,
     pub ty: SymbolType,
@@ -44,10 +45,7 @@ impl TypeTable {
     }
 
     pub fn get(&self, name: &str) -> Option<&Symbol> {
-        match self.var_map.get(name) {
-            Some(it) => Some(it),
-            None => return None
-        }
+        self.var_map.get(name.into())
     }
 
     pub fn insert_var(&mut self, symbol: Symbol) {
@@ -55,9 +53,30 @@ impl TypeTable {
     }
 
     pub fn define_var(&mut self, name: &str, var_ty: Ty) -> Symbol {
-        Symbol {
+        let sym = Symbol {
             name: name.into(),
-            ty: SymbolType::Variable(var_ty)
-        }
+            ty: SymbolType::Variable(var_ty),
+        };
+
+        self.insert_var(sym.clone());
+
+        sym
+    }
+}
+
+pub fn str_to_ty(ty_str: &str) -> Option<Ty> {
+    match ty_str {
+        "i64" => Some(Ty::IntTy(crate::IntTy::I64)),
+        "i32" => Some(Ty::IntTy(crate::IntTy::I32)),
+        "i16" => Some(Ty::IntTy(crate::IntTy::I16)),
+        "i8" => Some(Ty::IntTy(crate::IntTy::I8)),
+        "u64" => Some(Ty::IntTy(crate::IntTy::U64)),
+        "u32" => Some(Ty::IntTy(crate::IntTy::U32)),
+        "u16" => Some(Ty::IntTy(crate::IntTy::U16)),
+        "u8" => Some(Ty::IntTy(crate::IntTy::U8)),
+        "usize" => Some(Ty::IntTy(crate::IntTy::USize)),
+        "isize" => Some(Ty::IntTy(crate::IntTy::ISize)),
+
+        _ => None
     }
 }

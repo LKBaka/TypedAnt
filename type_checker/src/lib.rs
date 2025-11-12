@@ -8,7 +8,7 @@ use token::token::Token;
 
 use crate::{
     error::{TypeCheckerError, TypeCheckerErrorKind},
-    table::TypeTable,
+    table::{TypeTable, str_to_ty},
     typed_ast::{
         GetType, typed_expr::TypedExpression, typed_expressions::ident::Ident,
         typed_node::TypedNode, typed_stmt::TypedStatement,
@@ -73,7 +73,10 @@ impl TypeChecker<'_> {
                     typed_statements.push(self.check_statement(stmt)?);
                 }
 
-                Ok(TypedNode::Program { token, statements: typed_statements })
+                Ok(TypedNode::Program {
+                    token,
+                    statements: typed_statements,
+                })
             }
         }
     }
@@ -116,9 +119,51 @@ impl TypeChecker<'_> {
 
     pub fn check_statement(&mut self, stmt: Statement) -> CheckResult<TypedStatement> {
         match stmt {
-            Statement::ExpressionStatement(expr) =>
-                Ok(TypedStatement::ExpressionStatement(self.check_expr(expr)?)),
-            _ => todo!()
+            Statement::ExpressionStatement(expr) => {
+                Ok(TypedStatement::ExpressionStatement(self.check_expr(expr)?))
+            }
+
+            Statement::Let {
+                token,
+                name,
+                var_type,
+                value,
+            } => {
+                let ty_name = if let Some(ref ty) = var_type {
+                    ty
+                } else {
+                    todo!()
+                };
+
+                let ty = match str_to_ty(&ty_name.value) {
+                    Some(it) => it,
+                    None => todo!(),
+                };
+
+                self.table.define_var(&name.value, ty);
+
+                let typed_val = self.check_expr(value)?;
+
+                Ok(TypedStatement::Let {
+                    token: token.clone(),
+                    name: Ident {
+                        token,
+                        value: name.value,
+                    },
+                    var_type: match var_type {
+                        Some(it) => Some(Ident {
+                            token: it.token,
+                            value: it.value,
+                        }),
+
+                        None => None,
+                    },
+                    ty,
+                    value: typed_val,
+                })
+            }
+
+            _ => todo!(),
         }
     }
 
