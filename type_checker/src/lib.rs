@@ -50,10 +50,12 @@ impl From<IntValue> for IntTy {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Ty {
     BigInt,
-    Function,
+    Function {
+        params_type: Vec<Ty>, ret_type: Box<Ty>
+    },
     IntTy(IntTy),
 }
 
@@ -103,7 +105,7 @@ impl TypeChecker<'_> {
                             token: it.token,
                             value: it.value,
                         },
-                        *symbol.ty.get_type(),
+                        symbol.ty.get_type(),
                     )),
                     None => Err(Self::push_err(
                         None,
@@ -140,7 +142,7 @@ impl TypeChecker<'_> {
                     None => todo!(),
                 };
 
-                self.table.define_var(&name.value, ty);
+                self.table.define_var(&name.value, ty.clone());
 
                 let typed_val = self.check_expr(value)?;
 

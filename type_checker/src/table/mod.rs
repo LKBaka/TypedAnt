@@ -16,10 +16,12 @@ pub enum SymbolType {
 }
 
 impl GetType for SymbolType {
-    fn get_type(&self) -> &Ty {
+    fn get_type(&self) -> Ty {
         match self {
-            Self::Variable(ty) => ty,
-            Self::Function { .. } => &Ty::Function,
+            Self::Variable(ty) => ty.clone(),
+            Self::Function { params_type, ret_type } => Ty::Function {
+                params_type: params_type.clone(), ret_type: Box::new(ret_type.clone())
+            },
         }
     }
 }
@@ -76,6 +78,7 @@ pub fn str_to_ty(ty_str: &str) -> Option<Ty> {
         "u8" => Some(Ty::IntTy(crate::IntTy::U8)),
         "usize" => Some(Ty::IntTy(crate::IntTy::USize)),
         "isize" => Some(Ty::IntTy(crate::IntTy::ISize)),
+        "BigInt" => Some(Ty::BigInt),
 
         _ => None
     }

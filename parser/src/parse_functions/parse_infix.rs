@@ -15,5 +15,10 @@ pub fn parse_infix(parser: &mut Parser, left: Expression) -> ParseResult<Express
 
     let right = parser.parse_expression(precedence)?;
 
-    Ok(Expression::Infix { token, left: Box::new(left), right: Box::new(right) })
+    Ok(Expression::Infix {
+        op: token.value.clone(),
+        left: Box::new(left),
+        right: Box::new(right),
+        token,
+    })
 }

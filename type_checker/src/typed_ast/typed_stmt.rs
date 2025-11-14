@@ -54,12 +54,12 @@ impl Display for TypedStatement {
 }
 
 impl GetType for TypedStatement {
-    fn get_type(&self) -> &Ty {
+    fn get_type(&self) -> Ty {
         match self {
-            Self::Block { ty, .. } => ty,
+            Self::Block { ty, .. } => ty.clone(),
             Self::ExpressionStatement(expr) => expr.get_type(),
-            Self::Return { ty, .. } => ty,
-            Self::Let { ty, .. } => ty,
+            Self::Return { ty, .. } => ty.clone(),
+            Self::Let { ty, .. } => ty.clone(),
         }
     }
 }

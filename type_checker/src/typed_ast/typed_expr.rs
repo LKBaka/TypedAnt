@@ -33,6 +33,7 @@ pub enum TypedExpression {
         name: Option<Token>,
         params: Vec<Box<TypedExpression>>,
         block: Box<TypedStatement>,
+        ret_ty: Option<Ident>,
         ty: Ty,
     },
 }
@@ -47,10 +48,11 @@ impl Display for TypedExpression {
                 params,
                 name,
                 block,
+                ret_ty,
                 ..
             } => write!(
                 f,
-                "func {}({}) {{{}}}",
+                "func {}({}){}{{{}}}",
                 name.as_ref()
                     .map_or_else(|| "".into(), |it| it.value.clone()),
                 params
@@ -58,6 +60,8 @@ impl Display for TypedExpression {
                     .map(|it| it.to_string())
                     .collect::<Vec<String>>()
                     .join(", "),
+                ret_ty.as_ref()
+                    .map_or_else(|| "".into(), |it| format!(" -> {it} ")),
                 block.to_string()
             ),
             Self::Infix {
@@ -68,13 +72,13 @@ impl Display for TypedExpression {
 }
 
 impl GetType for TypedExpression {
-    fn get_type(&self) -> &Ty {
+    fn get_type(&self) -> Ty {
         match self {
-            Self::BigInt { ty, .. } => ty,
-            Self::Int { ty, .. } => ty,
-            Self::Ident(_, ty) => ty,
-            Self::Function { ty, .. } => ty,
-            Self::Infix { ty, .. } => ty,
+            Self::BigInt { ty, .. } => ty.clone(),
+            Self::Int { ty, .. } => ty.clone(),
+            Self::Ident(_, ty) => ty.clone(),
+            Self::Function { ty, .. } => ty.clone(),
+            Self::Infix { ty, .. } => ty.clone(),
         }
     }
 }

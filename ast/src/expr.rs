@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
 
 use bigdecimal::BigDecimal;
 use token::token::Token;
@@ -49,6 +49,7 @@ pub enum Expression {
     Ident(Ident),
     Infix {
         token: Token,
+        op: Rc<str>,
         left: Box<Expression>,
         right: Box<Expression>,
     },
@@ -57,6 +58,7 @@ pub enum Expression {
         name: Option<Token>,
         params: Vec<Box<Expression>>,
         block: Box<Statement>,
+        ret_ty: Option<Ident>
     },
 }
 
@@ -70,10 +72,11 @@ impl Display for Expression {
                 params,
                 name,
                 block,
-                ..
+                ret_ty,
+                .. 
             } => write!(
                 f,
-                "func {}({}) {{{}}}",
+                "func {}({}){}{{{}}}",
                 name.as_ref()
                     .map_or_else(|| "".into(), |it| it.value.clone()),
                 params
@@ -81,9 +84,11 @@ impl Display for Expression {
                     .map(|it| it.to_string())
                     .collect::<Vec<String>>()
                     .join(", "),
+                ret_ty.as_ref()
+                    .map_or_else(|| "".into(), |it| format!(" -> {it} ")),
                 block.to_string()
             ),
-            Self::Infix { token, left, right } => write!(f, "({}{}{})", left, token.value, right),
+            Self::Infix { op, left, right, .. } => write!(f, "({}{}{})", left, op, right),
         }
     }
 }
