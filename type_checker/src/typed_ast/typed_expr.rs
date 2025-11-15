@@ -22,6 +22,7 @@ pub enum TypedExpression {
         ty: Ty,
     },
     Ident(Ident, Ty),
+    Block(Vec<TypedStatement>, Ty),
     TypeHint(Ident, Ident, Ty),
     Infix {
         token: Token,
@@ -37,14 +38,42 @@ pub enum TypedExpression {
         ret_ty: Option<Ident>,
         ty: Ty,
     },
+    If {
+        token: Token,
+        condition: Box<TypedExpression>,
+        consequence: Box<TypedExpression>,
+        else_block: Option<Box<TypedExpression>>,
+    },
 }
 
 impl Display for TypedExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::If {
+                condition,
+                consequence,
+                else_block,
+                ..
+            } => write!(
+                f,
+                "if {condition} {consequence}{}",
+                if let Some(it) = else_block {
+                    &format!(" else {it}")
+                } else {
+                    ""
+                }
+            ),
             Self::BigInt { value, .. } => write!(f, "{}", value),
             Self::Int { value, .. } => write!(f, "{}", value),
             Self::Ident(ident, _) => write!(f, "{}", ident),
+            Self::Block(it, _) => write!(
+                f,
+                "{{\n{}\n}}",
+                it.iter()
+                    .map(|it| "\t".to_owned() + &it.to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            ),
             Self::TypeHint(ident, ty, _) => write!(f, "{}: {}", ident, ty),
             Self::Function {
                 params,
@@ -62,7 +91,8 @@ impl Display for TypedExpression {
                     .map(|it| it.to_string())
                     .collect::<Vec<String>>()
                     .join(", "),
-                ret_ty.as_ref()
+                ret_ty
+                    .as_ref()
                     .map_or_else(|| "".into(), |it| format!(" -> {it} ")),
                 block.to_string()
             ),
@@ -79,9 +109,11 @@ impl GetType for TypedExpression {
             Self::BigInt { ty, .. } => ty.clone(),
             Self::Int { ty, .. } => ty.clone(),
             Self::Ident(_, ty) => ty.clone(),
+            Self::Block(_, ty) => ty.clone(),
             Self::Function { ty, .. } => ty.clone(),
             Self::Infix { ty, .. } => ty.clone(),
             Self::TypeHint(_, _, ty) => ty.clone(),
+            Self::If { consequence, .. } => consequence.get_type()
         }
     }
 }

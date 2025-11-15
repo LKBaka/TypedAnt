@@ -38,6 +38,6 @@ mod tests {
 
         assert!(got.is_some());
 
-        expected_symbol(&expected, got.unwrap());
+        expected_symbol(&expected, &got.unwrap());
     }
 }

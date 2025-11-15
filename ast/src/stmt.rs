@@ -42,7 +42,7 @@ impl Display for Statement {
                 "{}",
                 statements
                     .iter()
-                    .map(|it| it.to_string())
+                    .map(|it| "\t".to_owned() + &it.to_string())
                     .collect::<Vec<String>>()
                     .join("\n")
             ),

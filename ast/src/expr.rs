@@ -48,6 +48,7 @@ pub enum Expression {
     },
     Ident(Ident),
     TypeHint(Ident, Ident),
+    Block(Vec<Statement>),
     Infix {
         token: Token,
         op: Rc<str>,
@@ -59,7 +60,13 @@ pub enum Expression {
         name: Option<Token>,
         params: Vec<Box<Expression>>,
         block: Box<Statement>,
-        ret_ty: Option<Ident>
+        ret_ty: Option<Ident>,
+    },
+    If {
+        token: Token,
+        condition: Box<Expression>,
+        consequence: Box<Expression>,
+        else_block: Option<Box<Expression>>,
     },
 }
 
@@ -70,15 +77,37 @@ impl Display for Expression {
             Self::Int { value, .. } => write!(f, "{}", value),
             Self::TypeHint(ident, ty) => write!(f, "{ident}: {ty}"),
             Self::Ident(ident) => write!(f, "{}", ident),
+            Self::If {
+                condition,
+                consequence,
+                else_block,
+                ..
+            } => write!(
+                f,
+                "if {condition} {consequence}{}",
+                if let Some(it) = else_block {
+                    &format!(" else {it}")
+                } else {
+                    ""
+                }
+            ),
+            Self::Block(it) => write!(
+                f,
+                "{{\n{}\n}}",
+                it.iter()
+                    .map(|it| "\t".to_owned() + &it.to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            ),
             Self::Function {
                 params,
                 name,
                 block,
                 ret_ty,
-                .. 
+                ..
             } => write!(
                 f,
-                "func {}({}){}{{{}}}",
+                "func {}({}){}{{\n{}\n}}",
                 name.as_ref()
                     .map_or_else(|| "".into(), |it| it.value.clone()),
                 params
@@ -86,11 +115,14 @@ impl Display for Expression {
                     .map(|it| it.to_string())
                     .collect::<Vec<String>>()
                     .join(", "),
-                ret_ty.as_ref()
+                ret_ty
+                    .as_ref()
                     .map_or_else(|| "".into(), |it| format!(" -> {it} ")),
                 block.to_string()
             ),
-            Self::Infix { op, left, right, .. } => write!(f, "({}{}{})", left, op, right),
+            Self::Infix {
+                op, left, right, ..
+            } => write!(f, "({}{}{})", left, op, right),
         }
     }
 }

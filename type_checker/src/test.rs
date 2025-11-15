@@ -80,11 +80,12 @@ mod tests {
         assert!(ty == Ty::BigInt);
 
         let get_symbol_result = table.get("a");
+        let get_symbol_result_ref = get_symbol_result.as_ref();
 
         assert!(get_symbol_result.is_some());
-        assert!(unsafe { get_symbol_result.unwrap_unchecked() }.name == "a".into());
+        assert!(unsafe { get_symbol_result_ref.unwrap_unchecked() }.name == "a".into());
         assert!(
-            unsafe { get_symbol_result.unwrap_unchecked() }
+            unsafe { get_symbol_result_ref.unwrap_unchecked() }
                 .ty
                 .get_type()
                 == Ty::BigInt
@@ -92,8 +93,8 @@ mod tests {
 
         println!(
             "ok! symbol name: {}, symbol ty: {:#?}",
-            unsafe { get_symbol_result.unwrap_unchecked() }.name,
-            unsafe { get_symbol_result.unwrap_unchecked() }
+            unsafe { get_symbol_result_ref.unwrap_unchecked() }.name,
+            unsafe { get_symbol_result_ref.unwrap_unchecked() }
                 .ty
                 .get_type()
         )

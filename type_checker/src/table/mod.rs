@@ -46,8 +46,18 @@ impl TypeTable {
         }
     }
 
-    pub fn get(&self, name: &str) -> Option<&Symbol> {
-        self.var_map.get(name.into())
+    pub fn get(&self, name: &str) -> Option<Symbol> {
+        let try_get = self.var_map.get(name.into());
+
+        if let Some(it) = try_get {
+            return Some(it.clone());
+        }
+
+        if let Some(outer) = &self.outer {
+            return outer.borrow().get(name)
+        }
+
+        None
     }
 
     pub fn insert_var(&mut self, symbol: Symbol) {
