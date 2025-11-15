@@ -19,7 +19,7 @@ mod tests {
 
         table.define_var("a", crate::Ty::BigInt);
 
-        let checker = &mut TypeChecker { table };
+        let checker = &mut TypeChecker::new(table);
 
         let ident_raw = ast::expressions::ident::Ident {
             token: Token::new("a".into(), TokenType::Ident, file.clone(), 1, 1),
@@ -49,7 +49,7 @@ mod tests {
 
         let table = &mut TypeTable::new();
 
-        let checker = &mut TypeChecker { table };
+        let checker = &mut TypeChecker::new(table);
 
         let let_stmt_raw = ast::stmt::Statement::Let {
             name: ast::expressions::ident::Ident {

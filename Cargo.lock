@@ -3,14 +3,6 @@
 version = 4
 
 [[package]]
-name = "TypedAnt"
-version = "0.1.0"
-dependencies = [
- "clap",
- "repl",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -457,6 +449,15 @@ dependencies = [
  "ast",
  "bigdecimal",
  "token",
+ "utils",
+]
+
+[[package]]
+name = "typed_ant"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "repl",
 ]
 
 [[package]]

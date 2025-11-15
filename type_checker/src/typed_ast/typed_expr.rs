@@ -22,6 +22,7 @@ pub enum TypedExpression {
         ty: Ty,
     },
     Ident(Ident, Ty),
+    TypeHint(Ident, Ident, Ty),
     Infix {
         token: Token,
         left: Box<TypedExpression>,
@@ -44,6 +45,7 @@ impl Display for TypedExpression {
             Self::BigInt { value, .. } => write!(f, "{}", value),
             Self::Int { value, .. } => write!(f, "{}", value),
             Self::Ident(ident, _) => write!(f, "{}", ident),
+            Self::TypeHint(ident, ty, _) => write!(f, "{}: {}", ident, ty),
             Self::Function {
                 params,
                 name,
@@ -79,6 +81,7 @@ impl GetType for TypedExpression {
             Self::Ident(_, ty) => ty.clone(),
             Self::Function { ty, .. } => ty.clone(),
             Self::Infix { ty, .. } => ty.clone(),
+            Self::TypeHint(_, _, ty) => ty.clone(),
         }
     }
 }

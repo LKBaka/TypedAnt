@@ -47,6 +47,7 @@ pub enum Expression {
         value: IntValue,
     },
     Ident(Ident),
+    TypeHint(Ident, Ident),
     Infix {
         token: Token,
         op: Rc<str>,
@@ -67,6 +68,7 @@ impl Display for Expression {
         match self {
             Self::BigInt { value, .. } => write!(f, "{}", value),
             Self::Int { value, .. } => write!(f, "{}", value),
+            Self::TypeHint(ident, ty) => write!(f, "{ident}: {ty}"),
             Self::Ident(ident) => write!(f, "{}", ident),
             Self::Function {
                 params,

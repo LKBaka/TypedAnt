@@ -13,3 +13,18 @@ where
         );
     }
 }
+
+pub fn all_eq<I>(mut iter: I) -> bool
+where
+    I: Iterator,
+    I::Item: PartialEq,
+{
+    // 获取第一个元素作为基准值
+    let first = match iter.next() {
+        None => return true,  // 空迭代器：视为所有元素相等（真空真理）
+        Some(x) => x,
+    };
+    
+    // 检查所有剩余元素是否等于基准值
+    iter.all(|item| item == first)
+}
