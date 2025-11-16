@@ -82,6 +82,7 @@ pub enum Ty {
         ret_type: Box<Ty>,
     },
     IntTy(IntTy),
+    Unit
 }
 
 impl Display for Ty {
@@ -89,6 +90,7 @@ impl Display for Ty {
         match self {
             Self::BigInt => write!(f, "BigInt"),
             Self::IntTy(it) => write!(f, "{it}"),
+            Self::Unit => write!(f, "Unit"),
             Self::Function {
                 params_type,
                 ret_type,
@@ -370,6 +372,18 @@ impl<'table> TypeChecker<'table> {
                 })
             }
 
+            Expression::Block(statements) => {
+                let mut typed_statements: Vec<TypedStatement> = vec![];
+
+                for s in statements {
+                    typed_statements.push(self.check_statement(s)?);
+                }
+
+                let ty = typed_statements.last().map_or(Ty::Unit, |s| s.get_type());
+
+                Ok(TypedExpression::Block(typed_statements, ty))
+            }
+
             _ => todo!(),
         }
     }
@@ -449,7 +463,7 @@ impl<'table> TypeChecker<'table> {
                     typed_statements.push(self.check_statement(s)?);
                 }
 
-                let ty = typed_statements.last().map_or(Ty::BigInt, |s| s.get_type());
+                let ty = typed_statements.last().map_or(Ty::Unit, |s| s.get_type());
 
                 Ok(TypedStatement::Block {
                     token,
