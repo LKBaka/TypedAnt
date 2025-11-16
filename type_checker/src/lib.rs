@@ -174,6 +174,28 @@ impl<'table> TypeChecker<'table> {
                 })
             }
 
+            Expression::If {
+                token,
+                condition,
+                consequence,
+                else_block,
+            } => {
+                let typed_condition = self.check_expr(*condition)?;
+                let typed_consequence = self.check_expr(*consequence)?;
+
+                let typed_else_block = match else_block {
+                    Some(it) => Some(Box::new(self.check_expr(*it)?)),
+                    None => None,
+                };
+
+                Ok(TypedExpression::If {
+                    token,
+                    condition: Box::new(typed_condition),
+                    consequence: Box::new(typed_consequence),
+                    else_block: typed_else_block,
+                })
+            }
+
             Expression::Function {
                 token,
                 name,
