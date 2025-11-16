@@ -1,11 +1,14 @@
 pub mod scope;
 pub mod test;
+use std::fmt::Display;
+
 use ast::{
     expr::{Expression, IntValue},
     node::Node,
     stmt::Statement,
 };
 use token::token::Token;
+use utils::all_eq;
 
 use crate::{
     error::{TypeCheckerError, TypeCheckerErrorKind},
@@ -35,6 +38,25 @@ pub enum IntTy {
     U8,
 }
 
+impl Display for IntTy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::I64 => "i64",
+            Self::I32 => "i32",
+            Self::I16 => "i16",
+            Self::I8 => "i8",
+            Self::U64 => "u64",
+            Self::U32 => "u32",
+            Self::U16 => "u16",
+            Self::U8 => "u8",
+            Self::ISize => "isize",
+            Self::USize => "usize",
+        };
+
+        write!(f, "{s}")
+    }
+}
+
 impl From<IntValue> for IntTy {
     fn from(value: IntValue) -> Self {
         match value {
@@ -62,12 +84,43 @@ pub enum Ty {
     IntTy(IntTy),
 }
 
+impl Display for Ty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BigInt => write!(f, "BigInt"),
+            Self::IntTy(it) => write!(f, "{it}"),
+            Self::Function {
+                params_type,
+                ret_type,
+            } => write!(
+                f,
+                "Func({}) -> {}",
+                params_type
+                    .iter()
+                    .map(|it| it.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", "),
+                ret_type
+            ),
+        }
+    }
+}
+
 type CheckResult<T> = Result<T, TypeCheckerError>;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CompileAs {
+    AsValue,
+    AsNone,
+}
 
 pub struct TypeChecker<'table> {
     table: &'table mut TypeTable,
+
     scopes: Vec<CheckScope>,
     scope_index: usize,
+
+    compile_as: CompileAs,
 }
 
 impl<'table> TypeChecker<'table> {
@@ -79,6 +132,9 @@ impl<'table> TypeChecker<'table> {
 
         Self {
             table,
+
+            compile_as: CompileAs::AsNone,
+
             scope_index: 0,
             scopes: vec![global_scope],
         }
@@ -110,11 +166,33 @@ impl<'table> TypeChecker<'table> {
 
         let mut typed_statements = vec![];
 
-        for stmt in statements {
-            typed_statements.push(self.check_statement(stmt)?);
+        let statement_count = statements.len() - 1;
+
+        for (i, stmt) in statements.into_iter().enumerate() {
+            typed_statements.push(
+                if i == statement_count && scope_kind == ScopeKind::Function {
+                    self.compile_as = CompileAs::AsValue;
+                    let r = self.check_statement(stmt)?;
+                    self.compile_as = CompileAs::AsNone;
+
+                    r
+                } else {
+                    self.check_statement(stmt)?
+                },
+            );
         }
 
         Ok((typed_statements, self.leave_scope()))
+    }
+
+    pub fn check_expr_as_val(&mut self, expr: Expression) -> CheckResult<TypedExpression> {
+        self.compile_as = CompileAs::AsValue;
+
+        let result = self.check_expr(expr);
+
+        self.compile_as = CompileAs::AsNone;
+
+        result
     }
 
     pub fn check_expr(&mut self, expr: Expression) -> CheckResult<TypedExpression> {
@@ -185,7 +263,17 @@ impl<'table> TypeChecker<'table> {
 
                 let typed_else_block = match else_block {
                     Some(it) => Some(Box::new(self.check_expr(*it)?)),
-                    None => None,
+                    None => {
+                        if self.compile_as == CompileAs::AsValue {
+                            return Err(Self::make_err(
+                                Some("`if` may be missing an `else` clause"),
+                                TypeCheckerErrorKind::Other,
+                                Some(token),
+                            ));
+                        } else {
+                            None
+                        }
+                    }
                 };
 
                 Ok(TypedExpression::If {
@@ -201,13 +289,17 @@ impl<'table> TypeChecker<'table> {
                 name,
                 params,
                 block,
-                ret_ty,
+                ret_ty: ret_ty_ident,
             } => {
                 let mut typed_params: Vec<Box<TypedExpression>> = vec![];
 
                 for expr in params {
                     typed_params.push(Box::new(self.check_expr(*expr)?))
                 }
+
+                let ret_ty = ret_ty_ident
+                    .as_ref()
+                    .map_or_else(|| None, |it| str_to_ty(&it.value));
 
                 let typed_block = match *block {
                     Statement::Block {
@@ -217,24 +309,44 @@ impl<'table> TypeChecker<'table> {
                         let (stmts, scope) =
                             self.check_statements(statements, ScopeKind::Function)?;
 
-                        if !utils::all_eq(scope.collect_return_types.iter()) {
-                            return Err(Self::make_err(
-                                None,
-                                TypeCheckerErrorKind::TypeMismatch,
-                                None,
-                            ));
+                        if let Some(ret_ty) = &ret_ty {
+                            for cur_ret_ty in &scope.collect_return_types {
+                                if cur_ret_ty == ret_ty {
+                                    continue;
+                                }
+
+                                return Err(Self::make_err(
+                                    Some(&format!("expected: {ret_ty}, got: {cur_ret_ty}",)),
+                                    TypeCheckerErrorKind::TypeMismatch,
+                                    None,
+                                ));
+                            }
                         }
+
+                        let ret_ty = if let Some(ret_ty) = ret_ty {
+                            ret_ty
+                        } else {
+                            if all_eq(scope.collect_return_types.iter()) {
+                                scope.collect_return_types[0].clone()
+                            } else {
+                                return Err(Self::make_err(
+                                    None,
+                                    TypeCheckerErrorKind::TypeMismatch,
+                                    None,
+                                ));
+                            }
+                        };
 
                         TypedStatement::Block {
                             token: block_token,
                             statements: stmts,
-                            ty: scope.collect_return_types[0].clone(),
+                            ty: ret_ty,
                         }
                     }
                     other => self.check_statement(other)?,
                 };
 
-                let ret_ident = ret_ty.map(|it| Ident {
+                let ret_ident = ret_ty_ident.map(|it| Ident {
                     token: it.token,
                     value: it.value,
                 });
@@ -275,7 +387,7 @@ impl<'table> TypeChecker<'table> {
                 value,
             } => {
                 // 检查表达式的类型
-                let typed_val = self.check_expr(value)?;
+                let typed_val = self.check_expr_as_val(value)?;
 
                 // 如果有类型标注尝试获取类型 否则直接获取表达式的值
                 let ty = if let Some(ref ty_ident) = var_type {
