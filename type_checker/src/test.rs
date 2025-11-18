@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
+    use std::{cell::RefCell, rc::Rc};
 
     use bigdecimal::BigDecimal;
     use token::{token::Token, token_type::TokenType};
@@ -15,9 +15,9 @@ mod tests {
     fn test_checker_var_get() {
         let file: Rc<str> = "__test_checker_var_get__".into();
 
-        let table = &mut TypeTable::new();
+        let table = Rc::new(RefCell::new(TypeTable::new()));
 
-        table.define_var("a", crate::Ty::BigInt);
+        table.borrow_mut().define_var("a", crate::Ty::BigInt);
 
         let checker = &mut TypeChecker::new(table);
 
@@ -47,9 +47,9 @@ mod tests {
     fn test_checker_var_def() {
         let file: Rc<str> = "__test_checker_var_def__".into();
 
-        let table = &mut TypeTable::new();
+        let table = Rc::new(RefCell::new(TypeTable::new()));
 
-        let checker = &mut TypeChecker::new(table);
+        let checker = &mut TypeChecker::new(table.clone());
 
         let let_stmt_raw = ast::stmt::Statement::Let {
             name: ast::expressions::ident::Ident {
@@ -79,7 +79,7 @@ mod tests {
         assert!(ident.value == "a".into());
         assert!(ty == Ty::BigInt);
 
-        let get_symbol_result = table.get("a");
+        let get_symbol_result = table.borrow().get("a");
         let get_symbol_result_ref = get_symbol_result.as_ref();
 
         assert!(get_symbol_result.is_some());

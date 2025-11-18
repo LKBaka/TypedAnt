@@ -39,6 +39,13 @@ pub struct TypeTable {
 }
 
 impl TypeTable {
+    pub fn with_outer(outer: Rc<RefCell<TypeTable>>) -> Self {
+        Self {
+            outer: Some(outer),
+            var_map: HashMap::new(),
+        }
+    }
+    
     pub fn new() -> Self {
         Self {
             outer: None,

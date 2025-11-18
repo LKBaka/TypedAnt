@@ -1,6 +1,6 @@
 pub mod scope;
 pub mod test;
-use std::fmt::Display;
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use ast::{
     expr::{Expression, IntValue},
@@ -116,8 +116,8 @@ enum CompileAs {
     AsNone,
 }
 
-pub struct TypeChecker<'table> {
-    table: &'table mut TypeTable,
+pub struct TypeChecker {
+    table: Rc<RefCell<TypeTable>>,
 
     scopes: Vec<CheckScope>,
     scope_index: usize,
@@ -125,8 +125,8 @@ pub struct TypeChecker<'table> {
     compile_as: CompileAs,
 }
 
-impl<'table> TypeChecker<'table> {
-    pub fn new(table: &'table mut TypeTable) -> Self {
+impl TypeChecker {
+    pub fn new(table: Rc<RefCell<TypeTable>>) -> Self {
         let global_scope = CheckScope {
             kind: ScopeKind::Global,
             collect_return_types: vec![],
@@ -213,7 +213,7 @@ impl<'table> TypeChecker<'table> {
             Expression::Ident(it) => {
                 let ident_name = &it.value;
 
-                match self.table.get(&ident_name) {
+                match self.table.borrow().get(&ident_name) {
                     Some(symbol) => Ok(TypedExpression::Ident(
                         Ident {
                             token: it.token,
@@ -419,7 +419,7 @@ impl<'table> TypeChecker<'table> {
                     typed_val.get_type()
                 };
 
-                self.table.define_var(&name.value, ty.clone());
+                self.table.borrow_mut().define_var(&name.value, ty.clone());
 
                 Ok(TypedStatement::Let {
                     token: token.clone(),
@@ -475,6 +475,8 @@ impl<'table> TypeChecker<'table> {
     }
 
     pub fn enter_scope(&mut self, kind: ScopeKind) {
+        self.table = Rc::new(RefCell::new(TypeTable::with_outer(self.table.clone())));
+
         self.scope_index += 1;
 
         self.scopes.push(CheckScope {
@@ -492,6 +494,15 @@ impl<'table> TypeChecker<'table> {
     }
 
     pub fn leave_scope(&mut self) -> CheckScope {
+        let outer = self
+            .table
+            .borrow()
+            .outer
+            .clone()
+            .expect("expected an outer");
+
+        self.table = outer;
+
         self.scope_index -= 1;
 
         self.scopes.pop().unwrap()
