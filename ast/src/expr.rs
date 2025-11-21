@@ -68,11 +68,24 @@ pub enum Expression {
         consequence: Box<Expression>,
         else_block: Option<Box<Expression>>,
     },
+    Call {
+        token: Token,
+        func: Box<Expression>,
+        args: Vec<Box<Expression>>,
+    },
 }
 
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Call { func, args, .. } => write!(
+                f,
+                "{func}({})",
+                args.iter()
+                    .map(|it| it.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
             Self::BigInt { value, .. } => write!(f, "{}", value),
             Self::Int { value, .. } => write!(f, "{}", value),
             Self::TypeHint(ident, ty) => write!(f, "{ident}: {ty}"),

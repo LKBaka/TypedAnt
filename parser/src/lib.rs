@@ -8,8 +8,7 @@ use token::{token::Token, token_type::TokenType};
 use crate::{
     error::{ParserError, ParserErrorKind},
     parse_functions::{
-        parse_block_expr::parse_block_expr, parse_i64::parse_i64, parse_ident::parse_ident,
-        parse_if::parse_if, parse_infix::parse_infix, parse_let::parse_let,
+        parse_block_expr::parse_block_expr, parse_call::parse_call, parse_i64::parse_i64, parse_ident::parse_ident, parse_if::parse_if, parse_infix::parse_infix, parse_let::parse_let
     },
     precedence::{Precedence, get_token_precedence},
 };
@@ -56,6 +55,8 @@ impl Parser {
 
         m.insert(TokenType::Lt, parse_infix);
         m.insert(TokenType::Gt, parse_infix);
+
+        m.insert(TokenType::LParen, parse_call);
     }
 
     fn init_statement_parse_fn_map(m: &mut HashMap<TokenType, StmtParseFn>) {
@@ -187,7 +188,10 @@ impl Parser {
 
         let mut left = prefix_parse_fn(self)?;
 
-        while self.peek_token.token_type != TokenType::Semicolon
+        while (
+            self.peek_token.token_type != TokenType::Semicolon ||
+            self.peek_token.token_type != TokenType::Eof
+        )
             && precedence < get_token_precedence(self.peek_token.token_type)
         {
             let infix_parse_fn = *self
@@ -214,6 +218,45 @@ impl Parser {
         }
 
         Ok(left)
+    }
+
+    /// 使用本函数前请确保你已经到达到指定开始 Token  
+    ///   
+    /// 例如 在使用该函数解析左括号到右括号的表达式时 请先前进到左括号  
+    ///   
+    /// 函数执行完后不会自动离开指定 结束Token 若要离开 请自行调用 next_token 方法  
+    pub fn parse_expression_list(&mut self, end: TokenType) -> Result<Vec<Box<Expression>>, ParserError> {
+        // 检查下一个词法单元是否为对应结束的词法单元
+        if self.peek_token_is(end) {
+            self.next_token();
+            return Ok(Vec::new()); // 如果是，直接退出，跳过表达式解析
+        }
+
+        self.next_token(); // 前进到表达式
+
+        let mut expressions = vec![];
+        expressions.push(Box::new(self.parse_expression(Precedence::Lowest)?));
+
+        while self.peek_token_is(TokenType::Comma) {
+            self.next_token(); // 离开表达式
+
+            if self.peek_token_is(end) {
+                // 尾逗号
+                self.next_token();
+                break;
+            }
+
+            self.next_token(); // 离开逗号
+
+            let expression = self.parse_expression(Precedence::Lowest)?;
+            expressions.push(Box::new(expression));
+        }
+
+        self.next_token(); // 前进到结束的词法单元
+
+        // WARNING: 若想在调用后跳过结束的词法单元，请自行在使用后处理
+
+        Ok(expressions)
     }
 
     pub fn make_error(&self, kind: ParserErrorKind, message: Option<Rc<str>>) -> ParserError {

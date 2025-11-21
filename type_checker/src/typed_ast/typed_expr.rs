@@ -38,6 +38,12 @@ pub enum TypedExpression {
         ret_ty: Option<Ident>,
         ty: Ty,
     },
+    Call {
+        token: Token,
+        func: Box<TypedExpression>,
+        args: Vec<Box<TypedExpression>>,
+        func_ty: Ty,
+    },
     If {
         token: Token,
         condition: Box<TypedExpression>,
@@ -49,6 +55,14 @@ pub enum TypedExpression {
 impl Display for TypedExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Call { func, args, .. } => write!(
+                f,
+                "{func}({})",
+                args.iter()
+                    .map(|it| it.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
             Self::If {
                 condition,
                 consequence,
@@ -113,7 +127,8 @@ impl GetType for TypedExpression {
             Self::Function { ty, .. } => ty.clone(),
             Self::Infix { ty, .. } => ty.clone(),
             Self::TypeHint(_, _, ty) => ty.clone(),
-            Self::If { consequence, .. } => consequence.get_type()
+            Self::If { consequence, .. } => consequence.get_type(),
+            Self::Call { func_ty, .. } => func_ty.clone()
         }
     }
 }

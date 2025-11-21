@@ -82,7 +82,7 @@ pub enum Ty {
         ret_type: Box<Ty>,
     },
     IntTy(IntTy),
-    Unit
+    Unit,
 }
 
 impl Display for Ty {
@@ -369,6 +369,30 @@ impl TypeChecker {
                     block: Box::new(typed_block),
                     ret_ty: ret_ident,
                     ty,
+                })
+            }
+
+            Expression::Call { token, func, args } => {
+                let typed_func = self.check_expr(*func)?;
+                if !matches!(typed_func, TypedExpression::Function { .. }) {
+                    return Err(Self::make_err(
+                        Some("not a function"),
+                        TypeCheckerErrorKind::TypeMismatch,
+                        None,
+                    ));
+                }
+
+                let mut typed_args = vec![];
+
+                for arg in args {
+                    typed_args.push(Box::new(self.check_expr(*arg)?));
+                }
+
+                Ok(TypedExpression::Call {
+                    token,
+                    func_ty: typed_func.get_type(),
+                    args: typed_args,
+                    func: Box::new(typed_func),
                 })
             }
 
