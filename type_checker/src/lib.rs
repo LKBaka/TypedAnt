@@ -177,6 +177,8 @@ impl TypeChecker {
                     let r = self.check_statement(stmt)?;
                     self.compile_as = CompileAs::AsNone;
 
+                    self.current_scope_mut().collect_return_types.push(r.get_type());
+
                     r
                 } else {
                     self.check_statement(stmt)?
