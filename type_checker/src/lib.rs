@@ -380,7 +380,7 @@ impl TypeChecker {
 
             Expression::Call { token, func, args } => {
                 let typed_func = self.check_expr(*func)?;
-                if !matches!(typed_func, TypedExpression::Function { .. }) {
+                if !matches!(typed_func.get_type(), Ty::Function { .. }) {
                     return Err(Self::make_err(
                         Some("not a function"),
                         TypeCheckerErrorKind::TypeMismatch,
