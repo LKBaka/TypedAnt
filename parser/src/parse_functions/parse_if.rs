@@ -2,7 +2,7 @@ use ast::expr::Expression;
 use token::token_type::TokenType;
 
 use crate::{
-    ParseResult, Parser, parse_functions::parse_block_expr::parse_block_expr,
+    ParseResult, Parser, parse_functions::parse_block::parse_block_expr,
     precedence::Precedence,
 };
 

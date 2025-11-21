@@ -1,7 +1,9 @@
+pub mod parse_type_hint;
+pub mod parse_func;
 pub mod parse_i64;
 pub mod parse_infix;
 pub mod parse_let;
 pub mod parse_ident;
-pub mod parse_block_expr;
+pub mod parse_block;
 pub mod parse_if;
 pub mod parse_call;
