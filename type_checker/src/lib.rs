@@ -364,6 +364,10 @@ impl TypeChecker {
                     ),
                 };
 
+                if let Some(name) = &name {
+                    self.table.borrow_mut().define_var(&name.value, ty.clone());
+                }
+
                 Ok(TypedExpression::Function {
                     token,
                     name,
