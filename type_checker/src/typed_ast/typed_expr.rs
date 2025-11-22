@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
 
 use ast::expr::IntValue;
 use bigdecimal::BigDecimal;
@@ -26,6 +26,7 @@ pub enum TypedExpression {
     TypeHint(Ident, Ident, Ty),
     Infix {
         token: Token,
+        op: Rc<str>,
         left: Box<TypedExpression>,
         right: Box<TypedExpression>,
         ty: Ty,
@@ -111,8 +112,8 @@ impl Display for TypedExpression {
                 block.to_string()
             ),
             Self::Infix {
-                token, left, right, ..
-            } => write!(f, "({}{}{})", left, token.value, right),
+                op, left, right, ..
+            } => write!(f, "({}{}{})", left, op, right),
         }
     }
 }

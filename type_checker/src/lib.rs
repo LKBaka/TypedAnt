@@ -237,7 +237,7 @@ impl TypeChecker {
             }
 
             Expression::Infix {
-                token, left, right, ..
+                token, left, right, op, ..
             } => {
                 let left_t = self.check_expr(*left)?;
                 let right_t = self.check_expr(*right)?;
@@ -257,6 +257,7 @@ impl TypeChecker {
                     token,
                     left: Box::new(left_t),
                     right: Box::new(right_t),
+                    op,
                     ty: lty,
                 })
             }
