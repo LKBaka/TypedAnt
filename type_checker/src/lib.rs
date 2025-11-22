@@ -164,8 +164,6 @@ impl TypeChecker {
         statements: Vec<Statement>,
         scope_kind: ScopeKind,
     ) -> CheckResult<(Vec<TypedStatement>, CheckScope)> {
-        self.enter_scope(scope_kind);
-
         let mut typed_statements = vec![];
 
         if statements.is_empty() {
@@ -317,6 +315,14 @@ impl TypeChecker {
                         token: block_token,
                         statements,
                     } => {
+                        self.enter_scope(ScopeKind::Function);
+
+                        for typed_param in &typed_params {
+                            if let TypedExpression::TypeHint(name, _, ty) = &**typed_param {
+                                self.table.borrow_mut().define_var(&name.value, ty.clone());
+                            }
+                        }
+
                         let (stmts, scope) =
                             self.check_statements(statements, ScopeKind::Function)?;
 
@@ -435,12 +441,12 @@ impl TypeChecker {
 
                 let new_ident = Ident {
                     token: ident.token,
-                    value: ident.value
+                    value: ident.value,
                 };
 
                 let new_ty_ident = Ident {
                     token: ty_ident.token,
-                    value: ty_ident.value
+                    value: ty_ident.value,
                 };
 
                 Ok(TypedExpression::TypeHint(new_ident, new_ty_ident, ty))
