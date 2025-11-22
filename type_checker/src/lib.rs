@@ -177,7 +177,9 @@ impl TypeChecker {
                     let r = self.check_statement(stmt)?;
                     self.compile_as = CompileAs::AsNone;
 
-                    self.current_scope_mut().collect_return_types.push(r.get_type());
+                    self.current_scope_mut()
+                        .collect_return_types
+                        .push(r.get_type());
 
                     r
                 } else {
@@ -360,7 +362,7 @@ impl TypeChecker {
                     ret_type: Box::new(
                         ret_ident
                             .as_ref()
-                            .map_or(Ty::BigInt, |id| str_to_ty(&id.value).unwrap_or(Ty::BigInt)),
+                            .map_or(Ty::Unit, |id| str_to_ty(&id.value).unwrap_or(Ty::BigInt)),
                     ),
                 };
 
