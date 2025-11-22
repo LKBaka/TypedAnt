@@ -421,7 +421,30 @@ impl TypeChecker {
                 Ok(TypedExpression::Block(typed_statements, ty))
             }
 
-            _ => todo!(),
+            Expression::TypeHint(ident, ty_ident) => {
+                let ty = str_to_ty(&ident.value).map_or_else(
+                    || {
+                        Err(Self::make_err(
+                            None,
+                            TypeCheckerErrorKind::TypeNotFound,
+                            Some(ty_ident.token.clone()),
+                        ))
+                    },
+                    |it| Ok(it),
+                )?;
+
+                let new_ident = Ident {
+                    token: ident.token,
+                    value: ident.value
+                };
+
+                let new_ty_ident = Ident {
+                    token: ty_ident.token,
+                    value: ty_ident.value
+                };
+
+                Ok(TypedExpression::TypeHint(new_ident, new_ty_ident, ty))
+            }
         }
     }
 
