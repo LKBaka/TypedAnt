@@ -422,7 +422,7 @@ impl TypeChecker {
             }
 
             Expression::TypeHint(ident, ty_ident) => {
-                let ty = str_to_ty(&ident.value).map_or_else(
+                let ty = str_to_ty(&ty_ident.value).map_or_else(
                     || {
                         Err(Self::make_err(
                             None,
