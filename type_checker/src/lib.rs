@@ -168,6 +168,10 @@ impl TypeChecker {
 
         let mut typed_statements = vec![];
 
+        if statements.is_empty() {
+            return Ok((typed_statements, self.leave_scope()));
+        }
+
         let statement_count = statements.len() - 1;
 
         for (i, stmt) in statements.into_iter().enumerate() {
