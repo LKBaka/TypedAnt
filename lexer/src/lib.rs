@@ -365,6 +365,41 @@ impl Lexer {
                             token.token_type = TokenType::Integer64;
                             token.value = num.into();
                         }
+
+                        TokenNumType::Int32(num) => {
+                            token.token_type = TokenType::Integer32;
+                            token.value = num.into();
+                        }
+
+                        TokenNumType::Int16(num) => {
+                            token.token_type = TokenType::Integer16;
+                            token.value = num.into();
+                        }
+
+                        TokenNumType::Int8(num) => {
+                            token.token_type = TokenType::Integer8;
+                            token.value = num.into();
+                        }
+
+                        TokenNumType::UInt64(num) => {
+                            token.token_type = TokenType::UInteger64;
+                            token.value = num.into();
+                        }
+
+                        TokenNumType::UInt32(num) => {
+                            token.token_type = TokenType::UInteger32;
+                            token.value = num.into();
+                        }
+
+                        TokenNumType::UInt16(num) => {
+                            token.token_type = TokenType::UInteger16;
+                            token.value = num.into();
+                        }
+
+                        TokenNumType::UInt8(num) => {
+                            token.token_type = TokenType::UInteger8;
+                            token.value = num.into();
+                        }
                     }
 
                     return token;

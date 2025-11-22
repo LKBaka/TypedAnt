@@ -8,7 +8,7 @@ use token::{token::Token, token_type::TokenType};
 use crate::{
     error::{ParserError, ParserErrorKind},
     parse_functions::{
-        parse_block::parse_block_expr, parse_call::parse_call, parse_func::parse_func, parse_i64::parse_i64, parse_ident::parse_ident, parse_if::parse_if, parse_infix::parse_infix, parse_let::parse_let
+        parse_block::parse_block_expr, parse_call::parse_call, parse_func::parse_func, parse_ident::parse_ident, parse_if::parse_if, parse_infix::parse_infix, parse_let::parse_let, parse_num::{parse_i64, parse_u64}
     },
     precedence::{Precedence, get_token_precedence},
 };
@@ -39,6 +39,8 @@ pub struct Parser {
 impl Parser {
     fn init_prefix_parse_fn_map(m: &mut HashMap<TokenType, PrefixParseFn>) {
         m.insert(TokenType::Integer64, parse_i64);
+        m.insert(TokenType::UInteger64, parse_u64);
+
         m.insert(TokenType::Ident, parse_ident);
         m.insert(TokenType::LBrace, parse_block_expr);
         m.insert(TokenType::If, parse_if);

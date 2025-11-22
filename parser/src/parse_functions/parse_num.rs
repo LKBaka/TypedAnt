@@ -10,7 +10,26 @@ pub fn parse_i64(parser: &mut Parser) -> ParseResult<Expression> {
         value: match i64::from_str(&parser.cur_token.value) {
             Ok(it) => IntValue::I64(it),
             Err(it) => return Err(parser.make_error(
-                ParserErrorKind::ParseInt64Error(match it.kind() {
+                ParserErrorKind::ParseIntError(match it.kind() {
+                    IntErrorKind::Empty => ParseIntErrorKind::Empty,
+                    IntErrorKind::InvalidDigit => ParseIntErrorKind::InvalidDigit,
+                    IntErrorKind::PosOverflow => ParseIntErrorKind::PosOverflow,
+                    IntErrorKind::NegOverflow => ParseIntErrorKind::NegOverflow,
+                    _ => unreachable!()
+                }),
+                None
+            ))
+        }
+    })
+}
+
+pub fn parse_u64(parser: &mut Parser) -> ParseResult<Expression> {
+    Ok(Expression::Int {
+        token: parser.cur_token.clone(),
+        value: match u64::from_str(&parser.cur_token.value) {
+            Ok(it) => IntValue::U64(it),
+            Err(it) => return Err(parser.make_error(
+                ParserErrorKind::ParseIntError(match it.kind() {
                     IntErrorKind::Empty => ParseIntErrorKind::Empty,
                     IntErrorKind::InvalidDigit => ParseIntErrorKind::InvalidDigit,
                     IntErrorKind::PosOverflow => ParseIntErrorKind::PosOverflow,

@@ -12,7 +12,7 @@ pub enum ParseIntErrorKind {
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq)]
 pub enum ParserErrorKind {
-    ParseInt64Error(ParseIntErrorKind),
+    ParseIntError(ParseIntErrorKind),
     MissingExpression,
     NotExpectedTokenType,
     PrefixParseFnNotFound,
@@ -30,7 +30,7 @@ impl Display for ParserErrorKind {
             Self::InfixParseFnNotFound => "infix parse fn not found",
             Self::StmtParseFnNotFound => "statement parse fn not found",
             Self::ExpectedType => "expected type",
-            Self::ParseInt64Error(err) => match err {
+            Self::ParseIntError(err) => match err {
                 ParseIntErrorKind::Empty => "cannot parse integer from empty string",
                 ParseIntErrorKind::InvalidDigit => "invalid digit found in string",
                 ParseIntErrorKind::NegOverflow => "number too small to fit in target type",
