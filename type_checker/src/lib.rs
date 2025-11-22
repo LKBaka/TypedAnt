@@ -169,6 +169,7 @@ impl TypeChecker {
         let mut typed_statements = vec![];
 
         if statements.is_empty() {
+            self.current_scope_mut().collect_return_types.push(Ty::Unit);
             return Ok((typed_statements, self.leave_scope()));
         }
 
@@ -335,16 +336,16 @@ impl TypeChecker {
 
                         let ret_ty = if let Some(ret_ty) = ret_ty {
                             ret_ty
+                        } else if scope.collect_return_types.is_empty() {
+                            Ty::Unit
+                        } else if all_eq(scope.collect_return_types.iter()) {
+                            scope.collect_return_types[0].clone()
                         } else {
-                            if all_eq(scope.collect_return_types.iter()) {
-                                scope.collect_return_types[0].clone()
-                            } else {
-                                return Err(Self::make_err(
-                                    None,
-                                    TypeCheckerErrorKind::TypeMismatch,
-                                    None,
-                                ));
-                            }
+                            return Err(Self::make_err(
+                                None,
+                                TypeCheckerErrorKind::TypeMismatch,
+                                None,
+                            ));
                         };
 
                         TypedStatement::Block {
