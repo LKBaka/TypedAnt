@@ -97,13 +97,13 @@ mod tests {
 
         assert!(matches!(result, TypedStatement::Let { .. }));
 
-        let (ident, ty) = match result {
-            TypedStatement::Let { name, ty, .. } => (name, ty),
+        let (ident, var_ty) = match result {
+            TypedStatement::Let { name, var_ty, .. } => (name, var_ty),
             _ => unreachable!(),
         };
 
         assert!(ident.value == "a".into());
-        assert!(tcx.get(ty) == &Ty::BigInt);
+        assert!(tcx.get(var_ty) == &Ty::BigInt);
 
         let get_symbol_result = tcx.table.read().unwrap().get("a");
         let get_symbol_result_ref = get_symbol_result.as_ref();
