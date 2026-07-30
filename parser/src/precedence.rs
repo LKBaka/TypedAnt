@@ -11,12 +11,13 @@ use token::token_type::TokenType;
 pub enum Precedence {
     Lowest,
     Assignment,  // a = 1
-    AndOr,       // Or | And
+    LogicalOr,   // or
+    LogicalAnd,  // and
     Equals,      // ==
     LessGreater, // > | <
     Sum,         // +
     Product,     // *
-    Cast,          // val as T
+    Cast,        // val as T
     Prefix,      // -X | !X
     Call,        // myFunction(X) array[index] person.Name 
     Highest,
@@ -39,8 +40,8 @@ pub static TOKEN_PRECEDENCES: Lazy<HashMap<TokenType, Precedence>> = Lazy::new(|
     m.insert(TokenType::Assign, Precedence::Assignment);
     m.insert(TokenType::Dot, Precedence::Call);
     m.insert(TokenType::TwoColon, Precedence::Call);
-    m.insert(TokenType::BoolOr, Precedence::AndOr);
-    m.insert(TokenType::BoolAnd, Precedence::AndOr);
+    m.insert(TokenType::BoolOr, Precedence::LogicalOr);
+    m.insert(TokenType::BoolAnd, Precedence::LogicalAnd);
     m.insert(TokenType::As, Precedence::Cast);
     
     m
