@@ -338,6 +338,24 @@ impl Lexer {
         }
     }
 
+    fn read_comment_muiltline(&mut self) -> String {
+        let start = self.pos + 2; // 跳过 "/*"
+
+        loop {
+            self.read_char();
+
+            if (self.cur_char == '*' && self.peek_char() == '/') || self.eof() {
+                let s = self.code_vec[start..self.pos]
+                    .iter()
+                    .map(|ch| ch.to_string())
+                    .collect::<Vec<String>>()
+                    .join("");
+
+                return s;
+            }
+        }
+    }
+
     fn next_token(&mut self) -> Token {
         self.skip_whitespace();
 
@@ -412,6 +430,13 @@ impl Lexer {
                 if peek_char == '/' {
                     // 读取注释内容并跳过
                     self.read_comment();
+                    // 递归调用 next_token 跳过注释，获取下一个有效token
+                    return self.next_token();
+                } else if peek_char == '*' {
+                    // 读取注释内容并跳过
+                    self.read_comment_muiltline();
+                    self.read_char(); // 跳过 *
+                    self.read_char(); // 跳过 /
                     // 递归调用 next_token 跳过注释，获取下一个有效token
                     return self.next_token();
                 }
