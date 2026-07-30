@@ -830,11 +830,14 @@ impl<'c, 'b, 'a> TypeInfer<'a, 'b, 'c> {
                 self.current_expected_ret_ty = Some(expected_ret_ty);
 
                 let block_ty = self.infer_expr(block)?;
-                self.unify(
-                    expected_ret_ty,
-                    block_ty,
-                    self.module_ref().get_expr(block).unwrap().token(),
-                )?;
+
+                if *self.tcx_ref().get(expected_ret_ty) != Ty::Unit {
+                    self.unify(
+                        expected_ret_ty,
+                        block_ty,
+                        self.module_ref().get_expr(block).unwrap().token(),
+                    )?;
+                }
 
                 self.current_expected_ret_ty = old_ret_ty;
 
