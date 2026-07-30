@@ -2062,7 +2062,8 @@ impl<'a, 'b> TypeChecker<'a, 'b> {
 
                         None => None,
                     },
-                    ty,
+                    var_ty: ty,
+                    ty: self.tcx().alloc(Ty::Unit),
                     value: self.module.alloc_expr(typed_val),
                 })
             }
@@ -2113,7 +2114,8 @@ impl<'a, 'b> TypeChecker<'a, 'b> {
 
                         None => None,
                     },
-                    ty,
+                    var_ty: ty,
+                    ty: self.tcx().alloc(Ty::Unit),
                     value: self.module.alloc_expr(typed_val),
                 })
             }

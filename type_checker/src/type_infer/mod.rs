@@ -138,7 +138,7 @@ impl<'c, 'b, 'a> TypeInfer<'a, 'b, 'c> {
                     self.name_resolver.krate.get_def(def_id).set_ty(followed);
                 }
 
-                Some(ty)
+                None
             }
 
             TypedStatement::Let {
@@ -171,7 +171,7 @@ impl<'c, 'b, 'a> TypeInfer<'a, 'b, 'c> {
 
                 self.locals_tyid.insert(name.value.clone(), followed);
 
-                Some(ty)
+                None
             }
 
             TypedStatement::Extern { params, ret_ty, .. } => {
