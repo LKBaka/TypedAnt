@@ -100,6 +100,7 @@ impl Parser {
 
         m.insert(TokenType::Asterisk, parse_prefix);
         m.insert(TokenType::AddrOf, parse_prefix);
+        m.insert(TokenType::Minus, parse_prefix);
 
         m.insert(TokenType::LParen, parse_tuple);
     }
