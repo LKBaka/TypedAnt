@@ -318,7 +318,7 @@ impl Display for Expression {
             }
             Self::Infix {
                 op, left, right, ..
-            } => write!(f, "({left}{op}{right})"),
+            } => write!(f, "({left} {op} {right})"),
             Self::StaticMemberAccess { left, right, .. } => write!(f, "({left}::{right})"),
             Self::Cast { val, cast_to, .. } => write!(f, "({val} as {cast_to})"),
             Self::Prefix { op, right, .. } => write!(f, "{op}{right}"),
