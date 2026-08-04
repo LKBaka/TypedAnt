@@ -5,9 +5,9 @@ use crate::{ParseResult, Parser, precedence::Precedence};
 pub fn parse_bool_and(parser: &mut Parser, left: Expression) -> ParseResult<Expression> {
     let token = parser.cur_token.clone();
 
-    parser.next_token(); // 离开 and
+    parser.next_token();
 
-    let right = parser.parse_expression(Precedence::Lowest)?;
+    let right = parser.parse_expression(Precedence::LogicalAnd)?;
 
     Ok(Expression::BoolAnd {
         left: Box::new(left),
@@ -19,9 +19,9 @@ pub fn parse_bool_and(parser: &mut Parser, left: Expression) -> ParseResult<Expr
 pub fn parse_bool_or(parser: &mut Parser, left: Expression) -> ParseResult<Expression> {
     let token = parser.cur_token.clone();
 
-    parser.next_token(); // 离开 or
+    parser.next_token();
 
-    let right = parser.parse_expression(Precedence::Lowest)?;
+    let right = parser.parse_expression(Precedence::LogicalOr)?;
 
     Ok(Expression::BoolOr {
         left: Box::new(left),
