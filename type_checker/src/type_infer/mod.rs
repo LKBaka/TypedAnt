@@ -272,7 +272,7 @@ impl<'c, 'b, 'a> TypeInfer<'a, 'b, 'c> {
                     let bool_ty = self.tcx().alloc(Ty::Bool);
                     self.unify(bool_ty, right_ty, right_token.clone())?;
                 } else if op.as_ref() == "-" || op.as_ref() == "+" {
-                    if !matches!(self.tcx_ref().get(right_ty), Ty::IntTy(_)) {
+                    if !matches!(self.tcx_ref().get(right_ty), Ty::IntTy(_) | Ty::InferInt(_)) {
                         return Err(TypeCheckerError {
                             kind: TypeCheckerErrorKind::TypeMismatch,
                             token,
@@ -607,7 +607,7 @@ impl<'c, 'b, 'a> TypeInfer<'a, 'b, 'c> {
                     let bool_ty = self.tcx().alloc(Ty::Bool);
                     self.unify(bool_ty, right_ty, right_token.clone())?;
                 } else if op.as_ref() == "-" || op.as_ref() == "+" {
-                    if !matches!(self.tcx_ref().get(right_ty), Ty::IntTy(_)) {
+                    if !matches!(self.tcx_ref().get(right_ty), Ty::IntTy(_) | Ty::InferInt(_)) {
                         return Err(TypeCheckerError {
                             kind: TypeCheckerErrorKind::TypeMismatch,
                             token,
@@ -617,6 +617,8 @@ impl<'c, 'b, 'a> TypeInfer<'a, 'b, 'c> {
                             ),
                         });
                     }
+
+                    return Ok(right_ty)
                 } else if op.as_ref() == "*" {
                     let expected_ptr_ty = self.tcx().alloc(Ty::Ptr(result_ty));
 
